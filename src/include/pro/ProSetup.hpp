@@ -197,13 +197,15 @@ namespace pro {
 
             selector.set_required_features(createInfo.reqFeaturesBase);      
             selector.set_required_features_12(createInfo.reqFeatures12);                       
-            selector.set_required_features_13(createInfo.reqFeatures13);   
-
+            selector.set_required_features_13(createInfo.reqFeatures13);  
+            //selector.prefer_gpu_device_type(vkb::PreferredDeviceType::discrete);
+            
             auto physRet = selector.select();
 
             if(!physRet) {  
                 instance_.destroySurfaceKHR(surface_); 
-                vkb::destroy_instance(bootInstance_);                       
+                vkb::destroy_instance(bootInstance_);    
+                cerr << "ERROR: "<< physRet.error().message().c_str() << endl;          
                 throw runtime_error(physRet.error().message());                
             }
 
