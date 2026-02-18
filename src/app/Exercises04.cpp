@@ -28,7 +28,7 @@ int main()
     int winWidth = 800;
     int winHeight = 600;
     GLFWwindow *window = glfwCreateWindow(winWidth, winHeight, appName.c_str(), NULL, NULL);
-    //check
+    //and check
     if(!window)
     {
         cerr << "FAILED TO CREATE WINDOW" << endl;
@@ -62,14 +62,36 @@ int main()
 
         //create VulkanInitData object
         pro::VulkanInitData vkInitData(initCreateInfo);
+
         //list physical graphics on system
         pro::listAvailablePhysicalDevices(vkInitData.instance());
         cout << "** Chosen Physical Device: **" << endl;
         pro::printPhysicalDeviceProperties(vkInitData.physicalDevice());
         
+        //resize
+        pro::OnResizeFunc resizeFunc = [&vkInitData, window]()
+        {
+            int width = 0, height = 0;
+            do {
+                glfwGetFramebufferSize(window, &width, &height);
+                glfwWaitEvents();                
+            } while(width == 0 || height == 0);
+            vkInitData.recreateVulkanSwapchain();
+            cout << "Swapchain recreated..." << endl;
+        };
+
+
+        
+        //main loop
         while(!glfwWindowShouldClose(window))
         {
             glfwPollEvents();
+
+            if(didWindowResize)
+            {
+                resizeFunc();
+                didWindowResize = false;
+            }
         }
     }
 
