@@ -8,6 +8,10 @@ static void window_resize_callback(GLFWwindow* window, int width, int height)
     didWindowResize = true;    
 }
 
+struct ForgeVertex
+{
+    glm::vec3 pos;
+};
 
 int main()
 {
@@ -24,7 +28,7 @@ int main()
     glfwWindowHint(GLFW_RESIZABLE, true);
 
     //create window
-    string appName = "Exercises05";
+    string appName = "Exercises06";
     int winWidth = 800;
     int winHeight = 600;
     GLFWwindow *window = glfwCreateWindow(winWidth, winHeight, appName.c_str(), NULL, NULL);
@@ -94,10 +98,16 @@ int main()
         //pipeline for shaders
         pro::VulkanPipelineCreateInfo pipelineCreateInfo(vkInitData);
         pipelineCreateInfo.shaderInfo = {
-            pro::VulkanShaderCreateInfo("build/compiledshaders/" + appName + "shader.vert.spv", vk::ShaderStageFlagBits::eVertex),
-            pro::VulkanShaderCreateInfo("build/compiledshaders" + appName + "shader.frag.spv", vk::ShaderStageFlagBits::eFragment)
+            pro::VulkanShaderCreateInfo("build/compiledshaders/" + appName + "/shader.vert.spv", vk::ShaderStageFlagBits::eVertex),
+            pro::VulkanShaderCreateInfo("build/compiledshaders/" + appName + "/shader.frag.spv", vk::ShaderStageFlagBits::eFragment)
         };
+
+        //set up vertex info
+        pipelineCreateInfo.bindDesc = vk::VertexInputBindingDescription(0, sizeof(ForgeVertex), vk::VertexInputRate::eVertex);
+        pipelineCreateInfo.attribDesc.push_back(vk::VertexInputAttributeDescription(0,0,vk::Format::eR32G32B32A32Sfloat, offsetof(ForgeVertex, pos)));
         
+        //create pipeline 
+        pro::VulkanPipelineData pipelineData = pro::createVulkanPipeline(vkInitData, pipelineCreateInfo);
 
         //MAIN RENDER LOOP
         while(!glfwWindowShouldClose(window))
@@ -116,18 +126,42 @@ int main()
             vkInitData.device().resetCommandPool(commandData.commandPool);
             //then begin recording
             commandData.commandBuffer.begin({vk::CommandBufferBeginInfo()});
-            commandData.commandBuffer.resetQueryPool(queryPool, 0, 2);
+            //commandData.commandBuffer.resetQueryPool(queryPool, 0, 2);
             //first time stamp
-            commandData.commandBuffer.writeTimestamp2(vk::PipelineStageFlagBits2::eTopOfPipe, queryPool, 0);
+            //commandData.commandBuffer.writeTimestamp2(vk::PipelineStageFlagBits2::eTopOfPipe, queryPool, 0);
 
-            //transition swap image: undefined to color, then color to presentation
+            //transition swap image: undefined to color
             pro::performVulkanImageTransition(commandData.commandBuffer, vkInitData.swapchain().swaps[indexSwap].image, pro::IMAGE_TRANSITION_TYPE::UNDEF_TO_COLOR);
-            pro::performVulkanImageTransition(commandData.commandBuffer, vkInitData.swapchain().swaps[indexSwap].image, pro::IMAGE_TRANSITION_TYPE::COLOR_TO_PRESENT);
             //second time stamp
-            commandData.commandBuffer.writeTimestamp2(vk::PipelineStageFlagBits2::eBottomOfPipe, queryPool, 1);
+            //commandData.commandBuffer.writeTimestamp2(vk::PipelineStageFlagBits2::eBottomOfPipe, queryPool, 1);
+
 
             //TO DO: recording commands go here -- rendering magic
+            //create color attachment
+            auto colorAtt = pro::createColorAttachment(vkInitData.swapchain().swaps[indexSwap].view, vk::ClearColorValue(0.6f, 0.0f, 1.0f, 1.0f));
+            //set color attachment
+            vk::RenderingInfoKHR ri{};
+            ri.setRenderArea(vk::Rect2D{ {0,0}, vkInitData.swapchain().extent }).setLayerCount(1).setColorAttachments(colorAtt);
+
+            //start dynamic rendering
+            commandData.commandBuffer.beginRendering(ri);
             
+            //bind pipeline
+            commandData.commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipelineData.pipeline);
+            
+            //set viewport and scissors
+            vk::Viewport viewports[] = { pro::makeDefaultViewport(vkInitData) };
+            vk::Rect2D scissors[] = { pro::makeDefaultScissors(vkInitData) };
+            commandData.commandBuffer.setViewport(0, viewports);
+            commandData.commandBuffer.setScissor(0, scissors);
+            
+            //end dynamic rendering
+            commandData.commandBuffer.endRendering();
+
+
+            //transition swap image: color to presentation
+            pro::performVulkanImageTransition(commandData.commandBuffer, vkInitData.swapchain().swaps[indexSwap].image, pro::IMAGE_TRANSITION_TYPE::COLOR_TO_PRESENT);
+            //end recording
             commandData.commandBuffer.end();
 
             //once done, submit to GPU
@@ -142,6 +176,7 @@ int main()
             framesRendered++;
 
             //get query pool values
+            /*
             uint64_t timestamps[2] = {};
             vkInitData.device().getQueryPoolResults(queryPool, 0, 2, sizeof(timestamps), timestamps, sizeof(uint64_t), vk::QueryResultFlagBits::e64 | vk::QueryResultFlagBits::eWait);
             //convert ticks to ns
@@ -149,10 +184,12 @@ int main()
             double nsPerTick = props.limits.timestampPeriod;    
             double deltaNs = (timestamps[1] - timestamps[0]) * nsPerTick;
             cout << "TIME for frame: " << deltaNs << endl;
+            */
         }
 
         //wait until all done, then clean up
         vkInitData.device().waitIdle();
+        pro::cleanupVulkanPipeline(vkInitData, pipelineData);
         vkInitData.device().destroyQueryPool(queryPool);
         pro::cleanupFrameCommandData(vkInitData, commandData);
     }
