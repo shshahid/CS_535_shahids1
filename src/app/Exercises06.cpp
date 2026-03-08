@@ -16,7 +16,30 @@ struct ForgeVertex
 int main()
 {
     cout << "BEGIN EXERCISE" << endl;
-    
+
+    glm::vec3 A = glm::vec3(1,4,0);
+    glm::vec3 B = glm::vec3(2,3,2);
+
+    cout << "A.x = " << A.x << endl;
+    cout << "A = " << glm::to_string(A) << endl;
+    cout << "B = " << glm::to_string(B) << endl;
+
+    glm::vec3 C = B - A;
+    cout << "C = " << glm::to_string(C) << endl;
+
+    A = 5.0f * A;
+    cout << "A = " << glm::to_string(A) << endl;
+
+    glm::vec3 normA = glm::normalize(A);
+    cout << "normA = " << glm::to_string(normA) << endl;
+    cout << "length A = "  << glm::length(A) << endl;
+    cout << "length normA = " << glm::length(normA) << endl;
+
+    glm::vec3 normB = glm::normalize(B);
+    float dotAB = glm::dot(normA, normB);
+    cout << "dotAB = " << dotAB << endl;
+
+
     //initialize GLFW environment + check
     if(!glfwInit())
     {
