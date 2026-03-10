@@ -22,3 +22,7 @@ This application should show a multi-color quad on the screen with a cyan backgr
 This application shows a multi-color quad with an animated background. There are two implementations:
 1) A rainbow animation using sine waves for R, G, and B values (0.0 to 1.0). (default when running program)
 2) A basic swap between two colors every 2 seconds, which are defined right before the main render loop. (commented out)
+
+### Assign02
+This application shows a variable polygon with an animated background. The polygon generated depends on the maxSub parameter, which when large enough just generates a circle.
+The createShape function takes in 2 parameters: maxSub (equal to number of triangles generated; default = 10) and flipWinding (CCW when false, CW when true; default = false). The function requires maxSub to be at least 3, values less than 3 (i.e. 1 and 2) do not work well due to the usage of cos and sin.
