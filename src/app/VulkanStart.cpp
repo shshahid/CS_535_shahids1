@@ -169,7 +169,7 @@ int main(int argc, char **argv) {
         pro::VulkanInitCreateInfo createInfo {};
         createInfo.appName = appName;
         // If you encounter errors with instance creation, try requesting Vulkan 1.3:
-        //createInfo.requestedAppVulkanVersionMinor = 3;
+        // createInfo.requestedAppVulkanVersionMinor = 3;
         
         // If you encounter errors with compute and/or transfer queue creation, try these:
         //createInfo.requireComputeQueue = false;
@@ -284,7 +284,7 @@ int main(int argc, char **argv) {
         vector<pro::VulkanMesh> allMeshes {};    
         allMeshes.resize(allHostMeshes.size());       
         for(unsigned int i = 0; i < allMeshes.size(); i++) {
-            allMeshes[i] = pro::createVulkanMesh(vkInitData, simpleQuad, false);
+            allMeshes[i] = pro::createVulkanMesh(vkInitData, allHostMeshes[i], false);
             pro::copyToHostVisibleVulkanMesh(vkInitData, allMeshes[i], allHostMeshes[i]);            
         }
 
