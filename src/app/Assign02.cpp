@@ -164,6 +164,7 @@ pro::HostMesh<ProVertex> createShape(int maxSub = 10, bool flipWinding = false)
         indices.push_back(i+1);
         indices.push_back(i+2);
     }
+    
     //close shape: loop last index back to start
     indices.back() = 1;
 
