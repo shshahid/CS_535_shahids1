@@ -148,7 +148,7 @@ pro::HostMesh<ProVertex> createShape(int maxSub = 10, bool flipWinding = false)
     //set center vertex before loop
     custShape.vertices.push_back({{0.0f, 0.0f, 0.5f}, {1,1,1,1}});
     //int vcount = 1;
-    for(float i = 0; i <= maxSub; i++)
+    for(float i = 0; i < maxSub; i++)
     {
         //vertex generation
         float angle = (i * 2.0 * 3.14) / maxSub;
@@ -164,11 +164,12 @@ pro::HostMesh<ProVertex> createShape(int maxSub = 10, bool flipWinding = false)
         indices.push_back(i+1);
         indices.push_back(i+2);
     }
+    
     //close shape: loop last index back to start
     indices.back() = 1;
 
     //check before setting indices
-    if(flipWinding == true)
+    if(flipWinding)
     {
         reverse(indices.begin(), indices.end());
     }
@@ -352,7 +353,7 @@ int main(int argc, char **argv) {
         //allHostMeshes.push_back(simpleQuad);
 
         //create and add shape to allHostMeshes
-        pro::HostMesh<ProVertex> custShape = createShape(8, false);
+        pro::HostMesh<ProVertex> custShape = createShape(80, false);
         allHostMeshes.push_back(custShape);
 
         // Create the Vulkan meshes
