@@ -1,6 +1,12 @@
 #include <iostream>
 #include <string>
 #include "pro/Prometheus.hpp"
+using namespace std;
+
+struct ForgeVertex
+{
+    glm::vec3 pos;
+};
 
 bool didWindowResize = false;
 static void window_resize_callback(GLFWwindow* window, int width, int height) 
@@ -8,10 +14,6 @@ static void window_resize_callback(GLFWwindow* window, int width, int height)
     didWindowResize = true;    
 }
 
-struct ForgeVertex
-{
-    glm::vec3 pos;
-};
 
 int main()
 {
@@ -40,6 +42,9 @@ int main()
     cout << "dotAB = " << dotAB << endl;
 
 
+
+
+
     //initialize GLFW environment + check
     if(!glfwInit())
     {
@@ -51,7 +56,7 @@ int main()
     glfwWindowHint(GLFW_RESIZABLE, true);
 
     //create window
-    string appName = "Exercises06";
+    string appName = "Exercises08";
     int winWidth = 800;
     int winHeight = 600;
     GLFWwindow *window = glfwCreateWindow(winWidth, winHeight, appName.c_str(), NULL, NULL);
@@ -127,11 +132,43 @@ int main()
 
         //set up vertex info
         pipelineCreateInfo.bindDesc = vk::VertexInputBindingDescription(0, sizeof(ForgeVertex), vk::VertexInputRate::eVertex);
-        pipelineCreateInfo.attribDesc.push_back(vk::VertexInputAttributeDescription(0,0,vk::Format::eR32G32B32A32Sfloat, offsetof(ForgeVertex, pos)));
+        pipelineCreateInfo.attribDesc.push_back(vk::VertexInputAttributeDescription(0,0,vk::Format::eR32G32B32Sfloat, offsetof(ForgeVertex, pos)));
         
         //create pipeline 
         pro::VulkanPipelineData pipelineData = pro::createVulkanPipeline(vkInitData, pipelineCreateInfo);
 
+
+        pro::TransferManager transferManager = pro::TransferManager(vkInitData);
+
+        //copying to device-local mesh
+        vector<pro::VulkanMesh> allMeshes {};
+        vector<pro::VulkanMesh> waitingMeshes {};
+        vector<pro::VulkanMesh> readyToRenderMeshes {};
+
+        vector<pro::PendingBufferCopy> pendingCopies {};
+        vector<pro::BufferCopyReceipt*> copiesToCheck {};
+
+        //host data
+        pro::HostMesh<ForgeVertex> hostMesh {};
+        hostMesh.vertices = {
+            {{-0.5f, -0.5f, 0.5f}},
+            {{0.5f, -0.5f, 0.5f}},
+            {{0.5f, 0.5f, 0.5f}},
+            {{-0.5f, 0.5f, 0.5f}}
+        };
+        //ccw winding
+        hostMesh.indices = {0,1,2,2,3,0};
+
+        pro::VulkanMesh mesh = pro::createVulkanMesh(vkInitData, hostMesh, true);
+        
+        pro::addPendingBufferCopies(mesh, hostMesh, pendingCopies);
+        auto transferReceipt = transferManager.submitCopies("SquareMesh", pendingCopies);
+        
+        copiesToCheck.push_back(transferReceipt);   
+        pendingCopies.clear();
+
+        allMeshes.push_back(mesh);
+        waitingMeshes.push_back(mesh);
         
 
         //MAIN RENDER LOOP
@@ -154,6 +191,18 @@ int main()
             //commandData.commandBuffer.resetQueryPool(queryPool, 0, 2);
             //first time stamp
             //commandData.commandBuffer.writeTimestamp2(vk::PipelineStageFlagBits2::eTopOfPipe, queryPool, 0);
+            
+            for(auto it = copiesToCheck.begin(); it != copiesToCheck.end();)
+            {
+                if(transferManager.checkCompleted(*it, commandData.commandBuffer)) {
+                    readyToRenderMeshes.insert(readyToRenderMeshes.end(), waitingMeshes.begin(), waitingMeshes.end());
+                    waitingMeshes.clear();
+                    it = copiesToCheck.erase(it);
+                }
+                else {
+                    it++;
+                }
+            }
 
             //transition swap image: undefined to color
             pro::performVulkanImageTransition(commandData.commandBuffer, vkInitData.swapchain().swaps[indexSwap].image, pro::IMAGE_TRANSITION_TYPE::UNDEF_TO_COLOR);
@@ -170,7 +219,6 @@ int main()
 
             //start dynamic rendering
             commandData.commandBuffer.beginRendering(ri);
-            
             //bind pipeline
             commandData.commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipelineData.pipeline);
             
@@ -180,6 +228,11 @@ int main()
             commandData.commandBuffer.setViewport(0, viewports);
             commandData.commandBuffer.setScissor(0, scissors);
             
+            for(int i = 0; i < readyToRenderMeshes.size(); i++)
+            {
+                pro::recordDrawVulkanMesh(commandData.commandBuffer, readyToRenderMeshes[i]);
+            }
+
             //end dynamic rendering
             commandData.commandBuffer.endRendering();
 
@@ -214,6 +267,16 @@ int main()
 
         //wait until all done, then clean up
         vkInitData.device().waitIdle();
+
+        for(int i = 0; i < allMeshes.size(); i++)
+        {
+            pro::cleanupVulkanMesh(vkInitData, allMeshes[i]);
+        }
+        allMeshes.clear();
+        waitingMeshes.clear();
+        readyToRenderMeshes.clear();
+        copiesToCheck.clear();
+
         pro::cleanupVulkanPipeline(vkInitData, pipelineData);
         vkInitData.device().destroyQueryPool(queryPool);
         pro::cleanupFrameCommandData(vkInitData, commandData);
