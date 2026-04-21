@@ -28,5 +28,7 @@ This application shows a variable polygon with an animated background. The polyg
 The createShape function takes in 2 parameters: maxSub (equal to number of triangles generated; default = 10) and flipWinding (CCW when false, CW when true; default = false). The function requires maxSub to be at least 3, values less than 3 (i.e. 1 and 2) do not work well due to the usage of cos and sin in generation.
 
 ### Assign03
-This application shows either the sphere.obj or bunnyteatime.glb based on command line arguments. Different transformations, including Z rotation, Z offset, and useNormalAsColor value are controlled by keyboard presses with a key for each increase (+) and decrease (-) as follows:  
-rotAngleZ: J +, K -; zOffset: U +, Y -; useNormalAsColor: O +, I -
+This application shows either the sphere.obj or bunnyteatime.glb based on command line arguments. Different transformations, including Z rotation, Z offset, and useNormalAsColor value, are controlled by keyboard presses with a key for each increase (+) and decrease (-) as follows:  
+rotAngleZ: J +, K -  
+zOffset: U +, Y -  
+useNormalAsColor: O +, I -
