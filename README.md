@@ -32,3 +32,9 @@ This application shows either the sphere.obj or bunnyteatime.glb based on comman
 rotAngleZ: J +, K -  
 zOffset: U +, Y -  
 useNormalAsColor: O +, I -
+
+### Assign 04
+This application shows the models with a ring of 4 lights with a moveable camera using the mouse and keyboard. The mouse moves the camera. Keyboard presses move the camera, change the light colors, and the amount of lights as follows:  
+W: forward, S: backward, D: right, A: left  
+1: light colors all white, 2: light colors all red, 3: light colors all green, 4: light colors all blue  
+X: increment light count, Z: decrement light count
