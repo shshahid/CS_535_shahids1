@@ -5,7 +5,6 @@ using namespace std;
 
 bool didWindowResize = false;
 glm::mat4 modelMat(1.0);
-UBOVertex uboVertHost{};
 
 struct ForgeVertex
 {
@@ -23,6 +22,8 @@ struct UBOVertex
     alignas(16) glm::mat4 viewMat {};
     alignas(16) glm::mat4 projMat {};
 };
+
+UBOVertex uboVertHost{};
 
 //window adjustments
 static void window_resize_callback(GLFWwindow* window, int width, int height) 
