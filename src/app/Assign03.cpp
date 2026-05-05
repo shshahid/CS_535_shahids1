@@ -331,6 +331,7 @@ int main(int argc, char **argv) {
     if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
     {
         cerr << "ERROR: " + string(imp.GetErrorString()) << endl;
+        exit(1);
     }
 
     cout << "BEGIN PROGRAM..." << endl;
