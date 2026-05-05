@@ -476,6 +476,10 @@ int main(int argc, char **argv) {
             offsetof(ProVertex, normal) // offset
         ));
 
+        pipelineCreateInfo.pushConstantRanges = { 
+            {vk::ShaderStageFlagBits::eVertex, 0, sizeof(UPushVertex)}
+        };
+
         // Actually create the pipeline data
         pro::VulkanPipelineData pipelineData = createVulkanPipeline(vkInitData, pipelineCreateInfo);
 
